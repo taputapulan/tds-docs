@@ -1,0 +1,108 @@
+---
+
+title: TapTap Login Features
+sidebar_label: Features
+sidebar_position: 1
+---
+
+import useBaseUrl from "@docusaurus/useBaseUrl";
+import { Conditional } from "/src/docComponents/conditional";
+
+To access TapTap Developer Services (hereinafter referred to as TDS), your users need to have a TapTap account. If users do not use a TapTap account, your application may encounter errors when calling TDS service APIs. This document introduces how to implement TapTap login in your application.
+
+## Business Introduction
+
+The TapTap account service is an authorized login system built on the standard OAuth 2.0 protocol, providing developers with a simple, secure, and fast account login authorization function. It eliminates the cumbersome steps of entering account passwords for users, allowing them to use your application with just one-click authorization through their TapTap account.
+
+After obtaining user authorization, developers can obtain related public information of TapTap users through API calls, including user nicknames, avatars, etc., which can be used to enhance the user experience of the application.
+
+## Preliminary Work
+
+Please ensure that the activation operation has been completed in **TapTap Developer Center > Application Configuration**.
+
+## Implement Interactive Login
+
+If there is no user login status, provide users with a visual clickable login interface. The TapTap review team will review your login interface when the application is listed in the TapTap store. Please be sure to draw it according to the [Login Button Design Specification](/design/).
+
+### Single Login Method
+
+When only TapTap login is provided in the application, it is recommended to draw an interactive login button on the main interface of starting the game. The size of the button and the text on the button should not mislead or hinder the user's normal and smooth clicks.
+
+The design style of the login button can appropriately add style elements that match the game's temperament within the range allowed by the [Login Button Design Specification](/design/). In addition, TDS also provides you with design icons for TapTap login buttons in different scenarios to help you quickly implement the login process. Please click [Login Button Resources](/tap-download/#登录按钮素材) to download resources.
+
+<Conditional region="cn">
+
+<img src={useBaseUrl("https://img.tapimg.com/market/images/1a238adc8948fde63ae61c8231f4b439.png")} alt="" width="800" />
+
+</Conditional>
+
+<Conditional region="global">
+
+<img src={useBaseUrl("https://capacity-files.lcfile.com/nsJ4SHU9UnMRo2IVhqbXUL7QJRLqj6xT/login-feature01.png")} alt="" width="800" />
+
+</Conditional>
+
+### Multiple Login Methods
+
+If the game has other login methods simultaneously, provide users with a login interface with a reasonable layout, and differentiate each login method as much as possible in appearance so that users can quickly find their target.
+
+<img src={useBaseUrl("https://img.tapimg.com/market/images/44a756d02965809db6178b84aaa9f667.png")} alt="" width="800" />
+
+## Implement Silent Login
+
+Silent login can help users skip the login process, usually used when users need the previous login status the next time they start the game.
+
+When the user starts the game, you can try to check if the user has already logged in on the current device and if the login information is still valid.
+
+- See [Check Login Status and User Information](/sdk/taptap-login/guide/#检查登录状态和用户信息) for details.
+
+This way, you can try to help users complete the login process without displaying the login button or interface.
+
+## Login Authorization
+
+The TapTap account service for mobile applications needs to be used in conjunction with the TapTap mobile client. TapSDK will automatically select the appropriate login process based on the installation status of the TapTap client on the user's device.
+
+<Conditional region="cn">
+
+[Click here](https://www.taptap.cn/mobile) to download the TapTap mobile client.
+
+</Conditional>
+
+<Conditional region="global">
+
+[Click here](https://www.taptap.io/mobile) to download the TapTap mobile client.
+
+</Conditional>
+
+### Invoke TapTap Client for Authorized Login
+
+When the user clicks the TapTap login button, if TapSDK detects that the TapTap client is installed on the user's device, it will automatically invoke the TapTap client on the device and recognize the login information in the client for authorized login.
+
+<Conditional region="cn">
+
+<img src={useBaseUrl("https://img.tapimg.com/market/images/caf890d41f948c8241ddac1ac6854437.png")} alt="" width="800" />
+
+</Conditional>
+
+<Conditional region="global">
+
+<img src={useBaseUrl("https://img.tapimg.net/market/images/727e18242efc7e2baa0d53edb333a817.png")} alt="" width="300" />
+
+</Conditional>
+
+### Open WebView for Authorized Login
+
+<Conditional region="cn">
+When the user clicks the TapTap login button, if TapSDK detects that the TapTap client is not installed on the user's device, it will open a WebView for the login process.
+
+<img src={useBaseUrl("https://img.tapimg.com/market/images/3473851ccf77b1ac7a64984572ef5cc1.png")} alt="" width="800" />
+
+</Conditional>
+
+<Conditional region="global">
+
+When the user clicks the TapTap login button, if TapSDK detects that the TapTap client is not installed on the user's device, it will prompt the user to download the TapTap client.
+
+<img src={useBaseUrl("https://img.tapimg.net/market/images/c6d5514533c2b8b42681c6eb861ae1da.png")} alt="" width="300" />
+
+</Conditional>

@@ -1,0 +1,684 @@
+---
+title: Server Development Guide
+sidebar_position: 3
+---
+
+import MultiLang from "/src/docComponents/MultiLang";
+
+# Server Development Guide
+
+:::tip
+For general service rules, please refer to [Request Rules and Signature Calculation](/sdk/TapPayments/develop/server/#request-rules-and-signature-calculation).
+:::
+
+## Main Query Services
+
+#### Request Domain:
+- `https://cloud-payment.tapapis.com`
+
+| **Endpoint**                           | **Method** | **Description**      |
+| -------------------------------------- | ---------- | -------------------- |
+| `/order/v1/info?client_id={{client_id}}&order_id={{order_id}}`        | `GET`        | Query order information         |
+| `/order/v1/unconfirmed?client_id={{client_id}}` | `GET`        | Query unconfirmed orders list |
+| `/order/v1/verify?client_id={{client_id}}`      | `POST`       | Verify order             |
+
+### Query Order Information
+
+#### Service URL
+- https://{{domain}}/order/v1/info?client_id={{client_id}}&order_id={{order_id}}
+
+#### Request Method
+- GET
+
+#### Request Signature Calculation
+- See [Request Rules and Signature Calculation](/sdk/TapPayments/develop/server/#request-rules-and-signature-calculation)
+
+Query detailed order information and payment status by order ID
+
+```
+curl -X GET \
+  -H 'X-Tap-Sign: {{signature}}' \
+  -H 'X-Tap-Ts: {{unix timestamp}}' \
+  -H 'X-Tap-Nonce: {{random nonce}}' \
+  https://{{domain}}/order/v1/info?client_id={{client_id}}&order_id={{order_id}}
+```
+
+The `data.order` object structure can be found in [Order Information](/sdk/TapPayments/develop/server/#order-information).
+
+```
+{
+  "data": {
+    "order": {}
+  },
+  "success": true
+}
+```
+
+### Query Unconfirmed Orders List
+
+#### Service URL
+- https://{{domain}}/order/v1/unconfirmed?client_id={{client_id}}
+
+#### Request Method
+- GET
+
+#### Request Signature Calculation
+- See [Request Rules and Signature Calculation](/sdk/TapPayments/develop/server/#request-rules-and-signature-calculation)
+
+Query the current list of unconfirmed orders. Normally, after a user successfully pays, you should verify the order through the verify interface and ensure successful delivery to the user. If verification was not completed due to an exception, you can query it through this interface and re-verify and complete delivery.
+
+```
+curl -X GET \
+  -H 'X-Tap-Sign: {{signature}}' \
+  -H 'X-Tap-Ts: {{unix timestamp}}' \
+  -H 'X-Tap-Nonce: {{random nonce}}' \
+  https://{{domain}}/order/v1/unconfirmed?client_id={{client_id}}
+```
+
+The `data.list` array object structure can be found in [Order Information](/sdk/TapPayments/develop/server/#order-information).
+
+```
+{
+  "data": {
+    "list": [
+      {}
+    ]
+  },
+  "success": true
+}
+```
+
+### Verify Order
+
+#### Service URL
+- https://{{domain}}/order/v1/verify?client_id={{client_id}}
+
+#### Request Method
+- POST[application/json; charset=utf-8]
+
+#### Request Body
+
+| **Parameter Name** | **Required** | **Format** |  **Description** |
+| ------------------ | ------------ | ---------- | ---------------- |
+| `order_id`         | Y            | string     | Unique order ID  |
+| `purchase_token`   | Y            | string     | Token used for order verification |
+
+#### Request Signature Calculation
+- See [Request Rules and Signature Calculation](/sdk/TapPayments/develop/server/#request-rules-and-signature-calculation)
+
+After a successful payment, verifying the order indicates that the payment result has been confirmed and the goods have been delivered to the buyer. The order status will change from `charge.succeeded` to `charge.confirmed`.
+
+```
+curl -X POST \
+  -H 'X-Tap-Sign: {{signature}}' \
+  -H 'X-Tap-Ts: {{unix timestamp}}' \
+  -H 'X-Tap-Nonce: {{random nonce}}' \
+  -H 'Content-Type: application/json; charset=utf-8'
+  -d '{"order_id":"{{order_id}}","purchase_token":"{{purchase_token}}"}'
+  https://{{domain}}/order/v1/verify?client_id={{client_id}}
+```
+
+The `data.order` object structure can be found in [Order Information](/sdk/TapPayments/develop/server/#order-information).
+
+```
+{
+  "data": {
+    "order": {}
+  },
+  "success": true
+}
+```
+
+## Webhook Callback
+
+:::tip
+The same notification may be sent multiple times, and the merchant system must correctly handle duplicate notifications.
+
+The recommended practice is: when the merchant system receives a notification, first perform signature verification, then check the status of the corresponding business data. If it is unprocessed, process it; if it has been processed, directly return success.
+
+It is recommended to use data locks for concurrency control when processing business data to avoid potential data anomalies.
+:::
+
+### Webhook Description
+
+Currently, Webhook supports listening to "Recharge Successful", "Refund Successful", and "Refund Failed" events. It is recommended to actively verify orders for "Recharge Successful" and complete delivery based on the order status.
+
+1. Navigate to **TapTap Developer Center > Your Game > Game Services > TapPayment > Products and Orders > API Keys** to check if there is an active key. If not, **add a new key**.
+2. Navigate to **TapTap Developer Center > Your Game > Game Services > TapPayment > Products and Orders > Webhooks Settings > Add** to add a valid **Recharge Successful** URL.
+
+### Webhook Request
+
+#### Service URL
+- Provided by the developer, added in Webhooks Settings
+
+#### Request Method
+- POST[application/json; charset=utf-8]
+
+#### Request Body
+
+| **Parameter Name** | **Required** | **Format** |  **Description** |
+| ------------------ | ------------ | ---------- | ---------------- |
+| `order`            | Y            | object     | Object structure can be found in [Order Information](/sdk/TapPayments/develop/server/#order-information) |
+| `event_type`       | Y            | string     | Event enumeration can be found in [Webhook Event Enumeration](/sdk/TapPayments/develop/server/#webhook-event-enumeration) |
+
+#### Request Signature Calculation
+- See [Request Rules and Signature Calculation](/sdk/TapPayments/develop/server/#request-rules-and-signature-calculation)
+
+```
+curl -X POST \
+  -H 'X-Tap-Sign: {{signature}}' \
+  -H 'X-Tap-Ts: {{unix timestamp}}' \
+  -H 'X-Tap-Nonce: {{random nonce}}' \
+  -H 'Content-Type: application/json; charset=utf-8'
+  -d '{"order":{},"event_type":"charge.succeeded"}'
+  {{your webhook url}}
+```
+
+### Webhook Response
+
+```
+{
+    "code": "SUCCESS",
+    "msg": ""
+}
+```
+
+#### Field Description
+
+| **Field** | **Type** | **Required** | **Description**                         |
+| --------- | -------- | ------------ | -------------------------------------- |
+| code      | string   | Y            | Status code, `SUCCESS` for success, `FAIL` or others for failure |
+| msg       | string   | N            | Failure reason when receiving fails    |
+
+## Request Rules and Signature Calculation
+
+### Request Headers
+
+| **Header**    | **Required** | **Description**                                          |
+| ------------- | ------------ | -------------------------------------------------------- |
+| `X-Tap-Sign`  | Y            | Interface signature, see [Signature Calculation](/sdk/TapPayments/develop/server/#signature-calculation) |
+| `X-Tap-Ts`    | Y            | Current time from the requester in unix timestamp         |
+| `X-Tap-Nonce` | Y            | Random number, must be between 6 and 60 bytes, regenerated for each request |
+
+### Request
+
+#### Reserved Parameters
+
+All HTTP METHODs must include this as part of the query parameters.
+
+| **Key**   | **Description** |
+| --------- | --------------- |
+| client_id | Application ID on the developer platform |
+
+```
+https://{{domain}}/order/v1/info?client_id={{client_id}}&order_id={{order_id}}
+```
+
+#### When the Request Method is POST
+
+The HTTP body must use JSON encoding to transmit parameters, meaning the request headers should carry `Content-Type: application/json; charset=utf-8`.
+
+```
+curl -X POST \
+  -H 'X-Tap-Sign: {{signature}}' \
+  -H 'X-Tap-Ts: {{unix timestamp}}' \
+  -H 'X-Tap-Nonce: {{random nonce}}' \
+  -H 'Content-Type: application/json; charset=utf-8'
+  -d '{"order_id":{{order_id}},"purchase_token":"{{purchase_token}}"}'
+  https://{{domain}}/order/v1/verify?client_id={{client_id}}
+```
+
+### Response
+
+#### Successful Response
+
+```
+{
+  "data": {},
+  "now": 1640966400,
+  "success": true
+}
+```
+
+#### Error Response
+
+```
+{
+  "data": {
+    "code": 100004,
+    "msg": "NotFound: Unknown Error",
+    "error_description": "order not found"
+  },
+  "now": 1640966400,
+  "success": false
+}
+```
+
+#### Field Description
+
+| **Field** | **Type** | **Required** | **Description**                  |
+| --------- | -------- | ------------ | -------------------------------- |
+| data      | object   | Y            | Business data or error description |
+| now       | int      | Y            | Server time (unix timestamp)     |
+| success   | bool     | Y            | Response status, `true` for success |
+
+Error response `data` field description
+
+| **Field**           | **Type** | **Required** | **Description**                                         |
+| ------------------- | -------- | ------------ |--------------------------------------------------------|
+| code                | int      | Y            | [Error Code](/sdk/TapPayments/develop/server/#error-code) |
+| msg                 | string   | Y            | General error description                               |
+| error_description   | string   | Y            | Detailed error description to aid understanding and resolution |
+
+### Signature Calculation
+
+The signature calculation uses the HMAC-SHA256 algorithm.
+
+#### Obtaining the Secret Key
+- You can view it at **TapTap Developer Center > Your Game > Game Services > TapPayment > Products and Orders > API Keys**.
+
+#### Signature Calculation Explanation
+
+sign = HMAC.New(Sha256, "{{Server Secret}}").Hash(message)
+
+Below is the composition of the `message`:
+
+```
+{method}\n
+{url_path_and_query}\n
+{headers}\n
+{body}\n
+```
+
+**method:** HTTP request method, such as GET, POST.
+
+**url_path_and_query:** Full request path and parameters, such as /service/v1/method?client_id={{client_id}}&foo={{foo}}&bar={{bar}}&foo_bar={{foo_bar}}
+
+**headers:** Combination of all headers prefixed with `X-Tap-`, sorted by ASCII code order, and joined with a newline \n as a separator. For example, {key1}:{value1}\n{key2}:{value2}\n{key3}:{value3}. **To avoid inconsistent sorting results across different network frameworks, convert keys to lowercase during signature calculation: key = tolower(key)**
+
+**body:** Request body. If the request body is empty, the last line is just a \n.
+
+Below is the composition of the `message` when the request body is empty:
+
+```
+{method}\n
+{url_path_and_query}\n
+{headers}\n
+\n
+```
+
+:::tip
+For the request body, there is no need to handle the order of request parameters. It is recommended to use a String to receive the RequestBody for Webhook requests, validate the request signature, and then complete data deserialization.
+:::
+
+<MultiLang kind="payment">
+
+<>
+
+```java
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import java.net.URI;
+import java.net.http.HttpRequest;
+import java.net.http.HttpClient;
+import java.net.http.HttpResponse;
+import java.util.*;
+import java.util.stream.Collectors;
+public class SignatureExample {
+
+    public static String signRequest(String method, URI uri, String body, Map<String, List<String>> headers, String secret) throws Exception {
+        String urlPathAndQueryPart = uri.getRawPath() + (uri.getRawQuery() != null ? "?" + uri.getRawQuery() : "");
+        String headersPart = getHeadersPart(headers);
+
+        // Signature string part containing the request body
+        String signParts = method.toUpperCase() + "\n" + urlPathAndQueryPart + "\n" + headersPart + "\n" + body + "\n";
+
+        System.out.println("Sign Parts:\n" + signParts);
+
+        Mac sha256_HMAC = Mac.getInstance("HmacSHA256");
+        SecretKeySpec secretKey = new SecretKeySpec(secret.getBytes(), "HmacSHA256");
+        sha256_HMAC.init(secretKey);
+
+        byte[] hash = sha256_HMAC.doFinal(signParts.getBytes());
+        return Base64.getEncoder().encodeToString(hash);
+    }
+
+    private static String getHeadersPart(Map<String, List<String>> headers) throws Exception {
+        TreeMap<String, String> sortedHeaders = new TreeMap<>();
+        headers.forEach((key, value) -> {
+            String lowerKey = key.toLowerCase();
+            if (lowerKey.equals("x-tap-sign")) {
+                return;
+            }
+            if (lowerKey.startsWith("x-tap-")) {
+                if (value.size() > 1) {
+                    throw new RuntimeException("Invalid header, " + lowerKey + " has multiple values");
+                }
+                sortedHeaders.put(lowerKey, value.get(0));
+            }
+        });
+
+        return sortedHeaders.entrySet().stream()
+            .map(entry -> entry.getKey() + ":" + entry.getValue())
+            .collect(Collectors.joining("\n"));
+    }
+
+    public static void main(String[] args) {
+        try {
+            String secret = "VRy8aS2xbwImQUwtxc6vs4v51DaJWdlO";
+            String body = "{\"event_type\":\"charge.succeeded\",\"order\":{\"order_id\":\"1790288650833465345\",\"purchase_token\":\"rT2Et9p0cfzq4fwjrTsGSacq0jQExFDqf5gTy1alp+Y=\",\"client_id\":\"o6nD4iNavjQj75zPQk\",\"open_id\":\"4+Axcl2RFgXbt6MZwdh++w==\",\"user_region\":\"US\",\"goods_open_id\":\"com.goods.open_id\",\"goods_name\":\"TestGoodsName\",\"status\":\"charge.succeeded\",\"amount\":\"19000000000\",\"currency\":\"USD\",\"create_time\":\"1716168000\",\"pay_time\":\"1716168000\",\"extra\":\"1111111111111111111\"}}";
+            URI uri = new URI("https://example.com/my-service/v1/my-method");
+
+            HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
+                .uri(uri)
+                .header("Content-Type", "application/json; charset=utf-8")
+                .header("X-Tap-Ts", "1716168000")
+                .header("X-Tap-Nonce", "V7v7zJ");
+
+            // Considering body to be added for a POST request
+            HttpRequest request = requestBuilder
+                .POST(HttpRequest.BodyPublishers.ofString(body))
+                .build();
+
+            String method = "POST";  // Since we are using the POST method in this example
+            String signature = signRequest(method, uri, body, request.headers().map(), secret);
+            System.out.println("Signature: " + signature);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+</>
+<>
+
+```go
+package main
+
+import (
+    "bytes"
+    "context"
+    "crypto/hmac"
+    "crypto/sha256"
+    "encoding/base64"
+    "fmt"
+    "io"
+    "net/http"
+    "sort"
+    "strings"
+)
+
+func main() {
+    //nolint:gosec
+    secret := "VRy8aS2xbwImQUwtxc6vs4v51DaJWdlO"
+    body := []byte(`{"event_type":"charge.succeeded","order":{"order_id":"1790288650833465345","purchase_token":"rT2Et9p0cfzq4fwjrTsGSacq0jQExFDqf5gTy1alp+Y=","client_id":"o6nD4iNavjQj75zPQk","open_id":"4+Axcl2RFgXbt6MZwdh++w==","user_region":"US","goods_open_id":"com.goods.open_id","goods_name":"TestGoodsName","status":"charge.succeeded","amount":"19000000000","currency":"USD","create_time":"1716168000","pay_time":"1716168000","extra":"1111111111111111111"}}`)
+    url := "https://example.com/my-service/v1/my-method"
+    method := "POST"
+    header := http.Header{
+        "Content-Type":  {"Content-Type: application/json; charset=utf-8"},
+        "X-Tap-Ts":      {"1716168000"},
+        "X-Tap-Nonce":   {"V7v7zJ"},
+    }
+    ctx := context.Background()
+    req, _ := http.NewRequestWithContext(ctx, method, url, bytes.NewBuffer(body))
+    req.Header = header
+    sign, err := Sign(req, secret)
+    if err != nil {
+        panic(err)
+    }
+    req.Header.Set("X-Tap-Sign", sign)
+    fmt.Println(sign)
+}
+
+// Sign signs the request.
+func Sign(req *http.Request, secret string) (string, error) {
+    methodPart := req.Method
+    urlPathAndQueryPart := req.URL.RequestURI()
+    headersPart, err := getHeadersPart(req.Header)
+    if err != nil {
+        return "", err
+    }
+    bodyPart, err := io.ReadAll(req.Body)
+    if err != nil {
+        return "", err
+    }
+    signParts := methodPart + "\n" + urlPathAndQueryPart + "\n" + headersPart + "\n" + string(bodyPart) + "\n"
+    fmt.Println(signParts)
+    h := hmac.New(sha256.New, []byte(secret))
+    h.Write([]byte(signParts))
+    rawSign := h.Sum(nil)
+    sign := base64.StdEncoding.EncodeToString(rawSign)
+    return sign, nil
+}
+
+// getHeadersPart returns the headers part of the request.
+func getHeadersPart(header http.Header) (string, error) {
+    var headerKeys []string
+    for k, v := range header {
+        k = strings.ToLower(k)
+        if !strings.HasPrefix(k, "x-tap-") {
+            continue
+        }
+        if k == "x-tap-sign" {
+            continue
+        }
+        if len(v) > 1 {
+            return "", fmt.Errorf("invalid header, %q has multiple values", k)
+        }
+        headerKeys = append(headerKeys, k)
+    }
+    sort.Strings(headerKeys)
+    headers := make([]string, 0, len(headerKeys))
+    for _, k := range headerKeys {
+        headers = append(headers, fmt.Sprintf("%s:%s", k, header.Get(k)))
+    }
+    return strings.Join(headers, "\n"), nil
+}
+```
+
+</>
+
+<>
+
+```python
+import base64
+import hashlib
+import hmac
+from typing import Dict, List
+from urllib.parse import urlparse
+
+def sign_request(method: str, url: str, body: str, headers: Dict[str, List[str]], secret: str) -> str:
+    # Extract URL path and query part
+    parsed_url = urlparse(url)
+    url_path_and_query = parsed_url.path + ('?' + parsed_url.query if parsed_url.query else '')
+
+    # Get headers that meet conditions and sort them
+    headers_part = get_headers_part(headers)
+
+    # Concatenate signature string
+    sign_parts = f"{method}\n{url_path_and_query}\n{headers_part}\n{body}\n"
+
+    print("Sign Parts:\n", sign_parts)
+
+    # Generate signature using HMAC SHA256 algorithm
+    raw_sign = hmac.new(secret.encode(), sign_parts.encode(), hashlib.sha256).digest()
+
+    # Base64 encode the signature
+    sign = base64.b64encode(raw_sign).decode()
+
+    return sign
+
+def get_headers_part(headers: Dict[str, List[str]]) -> str:
+    # Filter and sort headers
+    headers = {k.lower(): v for k, v in headers.items() if k.lower().startswith('x-tap-') and k.lower() != "x-tap-sign"}
+    header_keys = sorted(headers.keys())
+
+    # Assemble header string
+    headers_str = '\n'.join(f"{k}:{headers[k][0]}" for k in header_keys if len(headers[k]) == 1)
+
+    if any(len(headers[k]) > 1 for k in header_keys):
+        raise ValueError("Invalid header: has multiple values")
+
+    return headers_str
+
+# Example usage
+secret = "VRy8aS2xbwImQUwtxc6vs4v51DaJWdlO"
+url = "https://example.com/my-service/v1/my-method"
+method = "POST"
+body = '{"event_type":"charge.succeeded","order":{"order_id":"1790288650833465345",' \
+       '"purchase_token":"rT2Et9p0cfzq4fwjrTsGSacq0jQExFDqf5gTy1alp+Y=","client_id":"o6nD4iNavjQj75zPQk",' \
+       '"open_id":"4+Axcl2RFgXbt6MZwdh++w==","user_region":"US","goods_open_id":"com.goods.open_id",' \
+       '"goods_name":"TestGoodsName","status":"charge.succeeded","amount":"19000000000","currency":"USD",' \
+       '"create_time":"1716168000","pay_time":"1716168000","extra":"1111111111111111111"}}'
+headers = {
+    "Content-Type": ["Content-Type: application/json; charset=utf-8"],
+    "X-Tap-Ts": ["1716168000"],
+    "X-Tap-Nonce": ["V7v7zJ"],
+}
+
+try:
+    sign = sign_request(method, url, body, headers, secret)
+    print("Signature: ", sign)
+except Exception as e:
+    print("Error: ", str(e))
+
+```
+
+</>
+
+<>
+
+```php
+<?php
+function signRequest($method, $url, $body, $headers, $secret) {
+    // Extract URL path and query part
+    $urlParts = parse_url($url);
+    $urlPathAndQuery = $urlParts['path'] . (isset($urlParts['query']) ? '?' . $urlParts['query'] : '');
+    // Get headers that meet conditions and sort them
+    $headersPart = getHeadersPart($headers);
+    // Concatenate signature string
+    $signParts = $method . "\n" . $urlPathAndQuery . "\n" . $headersPart . "\n" . $body . "\n";
+    echo "Sign Parts:\n" . $signParts . "\n";
+    // Generate signature using HMAC SHA256 algorithm
+    $rawSign = hash_hmac('sha256', $signParts, $secret, true);
+    // Return Base64 encoded
+    return base64_encode($rawSign);
+}
+
+function getHeadersPart($headers) {
+    // Headers processing
+    $signHeaders = [];
+    foreach ($headers as $key => $value) {
+        $key = strtolower($key);
+        if (count($value) > 1) {
+            throw new Exception("Multiple values for header: " . $key);
+        }
+        if ($key === "x-tap-sign") {
+            continue;
+        }
+        if (strpos($key, 'x-tap-') === 0) {
+            $signHeaders[$key] = $value; // Assuming each header has a single value
+        }
+    }
+    $headerKeys = [];
+    foreach ($signHeaders as $key => $value) {
+        if (!(strpos($key, 'x-tap-') === 0)) {
+            continue;
+        }
+        $headerKeys[] = $key;
+    }
+    sort($headerKeys);
+    $headerParts = [];
+    foreach ($headerKeys as $key) {
+        $headerParts[] = $key . ':' . $signHeaders[$key][0];
+    }
+    return implode("\n", $headerParts);
+}
+
+// Example usage
+$secret = "VRy8aS2xbwImQUwtxc6vs4v51DaJWdlO";
+$url = "https://example.com/my-service/v1/my-method";
+$method = "POST";
+$body = '{"event_type":"charge.succeeded","order":{"order_id":"1790288650833465345","purchase_token":"rT2Et9p0cfzq4fwjrTsGSacq0jQExFDqf5gTy1alp+Y=","client_id":"o6nD4iNavjQj75zPQk","open_id":"4+Axcl2RFgXbt6MZwdh++w==","user_region":"US","goods_open_id":"com.goods.open_id","goods_name":"TestGoodsName","status":"charge.succeeded","amount":"19000000000","currency":"USD","create_time":"1716168000","pay_time":"1716168000","extra":"1111111111111111111"}}';
+$headers = [
+    "Content-Type" => ["Content-Type: application/json; charset=utf-8"],
+    "X-Tap-Ts" => ["1716168000"],
+    "X-Tap-Nonce" => ["V7v7zJ"]
+];
+try {
+    $sign = signRequest($method, $url, $body, $headers, $secret);
+    echo "Signature: " . $sign . "\n";
+} catch (Exception $e) {
+    echo "Error: " . $e->getMessage() . "\n";
+}
+
+```
+
+</>
+
+</MultiLang>
+
+Example signature calculation result:
+
+```
+# Part of the signature calculation
+POST\n
+/my-service/v1/my-method\n
+x-tap-nonce:V7v7zJ\n
+x-tap-ts:1716168000\n
+{"event_type":"charge.succeeded","order":{"order_id":"1790288650833465345","purchase_token":"rT2Et9p0cfzq4fwjrTsGSacq0jQExFDqf5gTy1alp+Y=","client_id":"o6nD4iNavjQj75zPQk","open_id":"4+Axcl2RFgXbt6MZwdh++w==","user_region":"US","goods_open_id":"com.goods.open_id","goods_name":"TestGoodsName","status":"charge.succeeded","amount":"19000000000","currency":"USD","create_time":"1716168000","pay_time":"1716168000","extra":"1111111111111111111"}}\n
+
+# Signature result (X-Tap-Sign)
+PyKQzlI65e0I9noVxcQc7FPU3nEyEFHKfRde65F6vhI=
+```
+
+## General Object Structure Description
+
+### Order Information
+
+| **Parameter**    | **Type** | **Required** | **Description**                                      |
+| ---------------- | -------- | ------------ | ---------------------------------------------------- |
+| order_id         | string   | Y            | Unique order ID                                      |
+| purchase_token   | string   | Y            | Token used for order verification                     |
+| client_id        | string   | Y            | Client ID of the application                          |
+| open_id          | string   | Y            | Open platform ID of the user                          |
+| user_region      | string   | Y            | [User Region](/sdk/TapPayments/appendix/regions-currencies) |
+| goods_open_id    | string   | Y            | Unique ID of the goods                                |
+| goods_name       | string   | Y            | Name of the goods                                     |
+| status           | string   | Y            | [Order Status](/sdk/TapPayments/develop/server/#order-status) |
+| amount           | string   | Y            | Amount (local currency amount x 1,000,000)            |
+| currency         | string   | Y            | [Currency](/sdk/TapPayments/appendix/regions-currencies) |
+| create_time      | string   | Y            | Creation time                                         |
+| pay_time         | string   | Y            | Payment time                                          |
+| extra            | string   | Y            | Custom data from the merchant, such as role information, no more than 255 UTF-8 characters |
+
+#### Order Status
+
+| **Order Status**     | **Description** |
+| -------------------- | ---------------- |
+| `charge.pending`     | Pending payment  |
+| `charge.succeeded`   | Payment succeeded |
+| `charge.confirmed`   | Confirmed        |
+| `charge.overdue`     | Payment timed out |
+| `refund.pending`     | Refund pending   |
+| `refund.succeeded`   | Refund succeeded |
+| `refund.failed`      | Refund failed    |
+| `refund.rejected`    | Refund rejected  |
+
+### Webhook Event Enumeration
+
+| **event_type**       | **Description** |
+| -------------------- | --------------- |
+| `charge.succeeded`   | Recharge succeeded |
+| `refund.succeeded`   | Refund succeeded   |
+| `refund.failed`      | Refund failed      |
+
+## Error Codes
+
+| **code** | **Description**   |
+| -------- | ----------------- |
+| `-1`     | Illegal request   |
+| `100000` | Payment service exception |
+| `100004` | Order not found   |
+| `100018` | Order verification error |

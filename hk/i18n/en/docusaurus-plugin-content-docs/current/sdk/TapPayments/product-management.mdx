@@ -1,0 +1,81 @@
+---
+title: Product Management
+sidebar_position: 3
+---
+
+<head>
+  <meta name="robots" content="noindex" />
+</head>
+
+To offer in-app purchases in your game, you must enter the in-app product information in the TapTap Developer Service Center and add it to your game. Each product must be associated with a game application (Client) and can only be used for that game. During use, you can create or delete products, or modify and improve existing product information.
+
+## Creating In-Game Products
+
+Before creating products, please plan your product IDs carefully. Product IDs must be unique to your game and cannot be changed or reused after creation.
+
+- Product IDs must start with a number or letter, be no longer than 30 characters, and can include numbers (0-9), letters (a-z/A-Z), underscores (_), and periods (.).
+- Once created, you cannot change or reuse the product ID.
+
+### Creating a Single Product
+
+1. Go to the TapTap Developer Service Center and select "Game Services" - "TapTap Payments" - "Products and Orders";
+
+2. Click "Add Product" and fill out your product details in the pop-up form;
+
+    - Product Type: Consumable and non-consumable products, see [Product Types](/sdk/TapPayments/overview) for details.
+    - Product ID: The unique identifier for the product, which cannot be changed or reused once created;
+    - Product Name: A short name for the product, visible to users. It is recommended to keep it within 80 characters;
+    - Product Description: A detailed description of the product content, recommended to be within 100 characters;
+    - Product Pricing: The desired selling price, priced in USD by default. Developers can download all pricing tiers to view prices in different countries;
+
+3. After completing the information, click "Submit for Review" and wait for the review results;
+
+4. Once approved, if you want the product to take effect, click the "Publish" button in the action column corresponding to the product;
+
+> Note that the same in-game product ID cannot be duplicated. Once submitted, it cannot be changed, and after deletion, it cannot be reused. Please plan carefully. Products can be modified for name, description, price, etc., while in an unpublished state. Once published, product information cannot be modified. See "Edit/Modify Products" for details.
+
+![mahua](https://img.tapimg.net/market/images/e3699d91d43ea8b4e2be799407da5cad.png)
+
+## Bulk Creating Multiple Products
+
+1. If you need to create multiple in-game products simultaneously, you can choose to use the "Bulk Import" feature to upload a CSV file containing detailed information for each product;
+
+2. Go to the TapTap Developer Service Center and select "Game Services" - "TapTap Payments" - "Products and Orders";
+
+3. Click "Bulk Import":
+
+    - Download the template;
+    - Upload the product details CSV file;
+    - Ensure each product is on a separate line. A single upload cannot exceed 100 products. Download the template;
+    - If a product ID in the product details CSV matches an existing product ID in the backend list, that product will not be uploaded from the CSV;
+
+> After successfully uploading the product details CSV file, the system will directly submit it for review. If unsupported languages are uploaded, they will be ignored and replaced by the default language.
+
+![tappay](https://img.tapimg.net/market/images/fe6f8a5e42b9dd8f1c728c7bdbc5e129.png)
+
+## Editing/Modifying Products
+
+|  Product Status   | Editing and Actions  |
+|  ----  | ----  |
+| Approved, Pending Publication  | Can modify product name, description / Can publish / Can delete |
+| Review Failed | Can modify product name, description / Can delete |
+| Published  | Can modify product name, description / Can unpublish |
+| Unpublished  | Can delete |
+
+## Product Status Descriptions
+
+* __Under Review__: Products need to be submitted for review before publishing. If approved, they enter the pending publication status. If the review fails, the reason for failure will be provided, and modifications should be made according to the reason before resubmitting;
+
+* __Approved__: Approved products are in a pending publication status and can be published at any time. Only published products will take effect in the production environment;
+
+* __Published__: Published products will take effect in the production environment;
+
+* __Unpublished__: Unpublished products cannot be used in the production environment. If a user clicks on the product, it will prompt "This product is unpublished";
+
+* __Deleted__: Developers can delete products, and deleted products cannot be reused;
+
+## Language and Localization
+
+If your game will be released in different countries/regions, it is also recommended to add localization information for your products. Complete the localization information entry by adding languages for different regions.
+
+![tappay](https://img.tapimg.net/market/images/18f0057bf9582eb7b96473aedcc3aa76.png)

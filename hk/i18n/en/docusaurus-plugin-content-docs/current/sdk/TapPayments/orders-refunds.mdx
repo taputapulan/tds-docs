@@ -1,0 +1,53 @@
+---
+title: Managing Orders and Processing Refunds
+sidebar_position: 4
+---
+
+<head>
+  <meta name="robots" content="noindex" />
+</head>
+
+You can view the sales orders of in-game purchases (IAP) through the "Game Services" - "TapTap Payments" - "Products and Orders" - "Transaction List" in the TapTap Developer Service Center and process refund requests for users.
+
+![tappay](https://img.tapimg.net/market/images/6fe770fd2885bd604bef22966252080e.png)
+
+## Finding Orders
+
+TapTap Payments supports various query methods:
+
+* __Query by User ID__: Enter the user's TapTap ID to find all orders purchased by the current user;
+
+* __Query by Order Number__: The TapTap order number created when the user makes a purchase in the game;
+
+* __Query by Transaction Serial Number__: Developer-defined order ID;
+
+* __Query by Order Status__: Query based on the transaction status of the order, including "Pending Payment," "Paid," "Verified," "Expired," "Refunded," etc.;
+
+* __Query by Order Time__: Filter and query based on the date when the user's order occurred;
+
+## Order Status
+
+The order page will display the status of each user purchase as follows:
+
+|  Order Payment Status  | Description  |
+|  ----  | ----  |
+| Pending Payment  | The user has not completed the payment, or the system is processing the order |
+| Order Paid | The user has completed the payment, and the system has successfully received the payment from the user |
+| Order Expired  | The order was not paid for a long time, or the payment was canceled |
+
+| Order Refund Status  | Description |
+|  ----  | ----  |
+| Refund Processing  | The user's refund request has been approved, and the system is processing the refund |
+| Order Refunded | The system has fully refunded the amount to the user's payment account |
+| Order Rejected  | The user's refund request is not approved |
+| Refund Failed  | The system refund was unsuccessful, or the user's payment method was declined |
+
+## Processing Refunds
+
+To protect and maintain users' legitimate rights and interests, TapTap provides a refund service for users. When a user initiates a refund request with TapTap, TapTap will collect materials on the user's consumption and item usage from the developer to decide whether to approve the refund. You can view the refund requests submitted by users under "Game Services" - "TapTap Payments" - "Process Refunds":
+
+* __Refund__: Agree to a full refund to the user through TapTap, and the system will return the entire payment amount to the user's payment account. After the refund, you are responsible for informing the user about the handling of in-game items.
+
+* __Reject__: Disagree with the refund to the user through TapTap. You must provide TapTap and the user with a reasonable explanation for the refusal or present relevant evidence of the user's consumption.
+
+If developers handle it passively or refuse to handle it, TapTap reserves the right to make the final decision.

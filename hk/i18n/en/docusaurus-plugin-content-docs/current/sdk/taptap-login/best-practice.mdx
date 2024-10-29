@@ -1,0 +1,51 @@
+---
+title: TapTap Login Best Practices
+sidebar_label: Best Practices
+sidebar_position: 3
+---
+
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+## Login Process
+
+The fewer steps and shorter the path a player has to take during login, the higher the conversion rate. It is recommended to use a relatively short guide, retaining only the necessary steps so that players can quickly enter the game. As shown in the figure:
+
+<img src={useBaseUrl('https://img.tapimg.net/market/images/95a9dcaae513ff18be2c1abe60723c21.png')} alt="" width="500" />
+
+### Login Interface
+
+Provide players with a TapTap login button, designed according to the [Login Design Guide](/design/), and refer to the presentation of single and multiple logins in the [Feature Introduction](/sdk/taptap-login/features/).
+
+### Using Player Public Information
+
+When players create a character in the game, they can directly use the public information authorized to the game after login, including the player's TapTap avatar, nickname, etc., to help players automatically complete the filling process.
+
+You can refer to the flowchart below:
+
+<img src={useBaseUrl('https://img.tapimg.net/market/images/75bb5292b13dc43f82584a29aa9af9b1.png')} alt="" width="800" />
+
+*Refer to the previous "Development Guide" document.
+
+### Provide Account Switching Function
+
+It is recommended that the game provides players with the ability to switch accounts.
+
+- When players switch accounts, be sure to call the logout interface to ensure that the login account is consistent with other game services (embedded dynamics) accounts.
+- When players have completed the logout operation, automatically display the login interface for them so they can log in with another account.
+
+### Provide Account Binding Function
+
+It is recommended to add an account binding function in the game to provide players with multiple login methods.
+
+If the game has its own account system and only uses simple TapTap login, the game needs to implement the account binding function by itself, so that players can bind the game account with the user unique identifier returned after TapTap login.
+
+## Checklist
+
+Before providing login functionality to players, developers need to test whether the login process is completed normally and check the following items:
+
+* Does the game meet the [SDK Environment Requirements](/sdk/access/quickstart/#environment-requirements)?
+* Have the relevant configurations for the Android platform or iOS platform been filled out in the TapTap Developer Backend? Refer to [Configure Signature Certificate](/sdk/access/get-ready/#configure-signature-certificate).
+* On a device without the TapTap client installed, can the login process be completed using the WebView method, and can the player's authorized basic information be obtained?
+* On a device with the latest TapTap client installed, can the TapTap client be launched to complete the login process, and can the player's authorized basic information be obtained?
+* After the login authorization is completed, if you exit the game and re-enter, can you [silently log in](/sdk/taptap-login/features/#implement-silent-login)?
+* If the login authorization is not completed and the game is exited, or if canceled, can the login process be restarted upon re-entering the game?

@@ -1,0 +1,36 @@
+---
+title: FAQ
+sidebar_position: 4
+---
+
+### 1. Steps to Upgrade Gradle Version for Unity Versions Before 2020.3.15
+
+Go to `Player Settings` -> `Player` -> `Android Tab` -> `Publish Settings` -> `Build`, and then check **Custom Base Gradle Template**, **Custom Launcher Gradle Template**, and **Custom Main Gradle Template**.
+
+![](https://capacity-files.lcfile.com/5nSUEX6IWVRkwu4Nep1pXo6vUnl9VppH/%E5%8D%87%E7%BA%A7gradle_1.png)
+
+The following changes apply to the three files `mainTemplate.gradle`, `launcherTemplate.gradle`, and `baseProjectTemplate.gradle` generated in the `Assets/Plugins/Android/` folder.
+
+Open `baseProjectTemplate.gradle` and modify the file content:
+
+```groovy
+dependencies {
+    ...
+    // Change version 3.x.0 to 4.0.0
+    //classpath 'com.android.tools.build:gradle:3.x.0'
+    classpath 'com.android.tools.build:gradle:4.0.0'
+}
+```
+
+Open both `mainTemplate.gradle` and `launcherTemplate.gradle` files, find the `lintOptions` tag, and add the **checkReleaseBuilds false** configuration:
+
+```groovy
+lintOptions {
+    abortOnError false
+    checkReleaseBuilds false
+}
+```
+
+Additionally, to align the [Gradle version with the Android Gradle Plugin version](https://developer.android.com/studio/releases/gradle-plugin#expandable-1), you need to update the Gradle version. Download [Gradle version 6.5.0](https://services.gradle.org/distributions/gradle-6.5-all.zip), extract it to a custom folder, and **uncheck** `Preferences` -> `External Tools` -> `Android` -> `Gradle Installed with Unity (recommend)` in Unity. Instead, select the path to the extracted Gradle folder, such as `<some path\>/gradle-6.5.0`.
+
+![](https://capacity-files.lcfile.com/hrkFCRy9VuLapvsanFm6nhpkHEEz0qVE/%E5%8D%87%E7%BA%A7gradle_2.png)

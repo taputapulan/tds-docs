@@ -1,0 +1,45 @@
+---
+
+title: FAQ
+sidebar_label: FAQ
+sidebar_position: 4
+---
+
+import CodeBlock from "@theme/CodeBlock";
+import { Conditional } from "/src/docComponents/conditional";
+
+### TapTap login reports: `Requested scope (compliance) does not match any allowed scope` exception.
+Check if the SDK package for real-name authentication and anti-addiction is imported but not initialized. If the real-name authentication feature is not needed, do not import the package into the project.
+
+### TapTap For iOS login reports `accessToken: sdk_not_matched` exception
+Check if the application's Bundle ID is configured in the TapTap developer backend.
+
+### TapTap login reports `signature not match` exception
+This exception occurs if TapTap login is integrated but the signature is not configured or is incorrectly configured in the developer center backend. Some developers may not have debugged this exception message. You can verify it this way: if the TapTap client is uninstalled, a WebView authorization will pop up when testing the login feature, but if the TapTap client is installed on the test device, the client cannot be launched for authorization. This situation is basically caused by signature configuration issues. Please refer to the [documentation](/sdk/access/get-ready/#配置签名证书) to complete the configuration.
+
+### TapTap login prompts `No test qualification or not during the test period, unable to log in to the game` exception.
+Check **TapTap Developer Center > Store > Version Release > Internal Test** to see if the internal test feature is enabled. If it is enabled, check if the current TapTap ID account has not been added to the test users.
+
+### TapTap login reports `state not equal` exception
+Check if the system time of the current device has been synchronized with the network and check if the current version of the TapTap client on the device is too low.
+
+### TapTap login reports `java.lang.NoSuchFieldException: CACHE_ELSE_NETWORK` exception
+Due to obfuscation enabled in the Android project, TapSDK has already been obfuscated, and obfuscation of TapSDK should be skipped. Please refer to [Android Code Obfuscation](/sdk/access/quickstart/#android-代码混淆) for details. Currently, Android native does not support enabling resource obfuscation, if the project has enabled resource obfuscation, please disable it, `shrinkResources false`.
+
+### TapTap login reports `Chain validation failed` exception
+You can troubleshoot as follows:
+1. Check if the device is connected to a proxy and the certificate is not properly installed;
+2. Check if the phone system time has been modified.
+
+### TapTap login reports `application id is empty` exception
+You can troubleshoot as follows:
+1. Check if the initialization of TapSDK is executed on the Android UI thread, which is the main thread;
+2. Ensure that the initialization of TapSDK has been completed. Avoid calling the TapTap login feature immediately after TapSDK initialization. It is recommended to prioritize TapSDK initialization.
+
+### Can developers obtain the player's phone number after the player logs in through TapTap?
+
+Phone numbers are considered private information of the player, and currently, developers are not supported to obtain the phone numbers of logged-in players.
+
+### Unity project integrates TapSDK and then exports the Xcode project. When running, it reports an error `NullReferenceException: Object reference not set to an instance of an object TapTap.Login.Editor. TapLoginlOSProcessor.OnPostprocessBuild ...`
+
+Please refer to the document [iOS Configuration](/sdk/taptap-login/guide) description and check if the `TDS-Info.plist` file has been created. (Note to delete comment lines when copying configuration content)

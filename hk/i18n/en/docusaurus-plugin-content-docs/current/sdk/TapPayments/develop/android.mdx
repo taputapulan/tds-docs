@@ -1,0 +1,216 @@
+---
+title: Android Integration Guide
+sidebar_position: 2
+---
+
+import MultiLang from "/src/docComponents/MultiLang";
+import { Conditional } from "/src/docComponents/conditional";
+import v4SDKVersions from '/src/docComponents/v4SDKVersions';
+import CodeBlock from '@theme/CodeBlock';
+
+## **Environment Requirements**
+
+- Gradle version 6.1.1 or above, Android AGP plugin version 4.0.1 or above;
+
+## **Preparation**
+
+- Create an app as described in [Getting Ready](/sdk/access/get-ready/), configure app parameters and bind the API domain name
+- Configure the package name and signature as described in [TapSDK Quick Start](/sdk/access/quickstart/)
+
+## **SDK Guide**
+
+### **SDK Integration**
+
+Open the `project/app/build.gradle` file of your project and add the following gradle configuration:
+
+<CodeBlock className="java">
+{`dependencies {
+    ...
+    // TapTapIAP dependency
+    implementation 'com.taptap.android.payment:iap:${v4SDKVersions.tapGlobalPayments.android}'
+    implementation 'com.taptap.android.payment:base:${v4SDKVersions.tapGlobalPayments.android}'
+    implementation 'com.taptap.android.payment:stripe:${v4SDKVersions.tapGlobalPayments.android}'
+    implementation 'com.taptap.android.payment:braintree:${v4SDKVersions.tapGlobalPayments.android}'
+    implementation 'com.taptap.android.payment:alipay:${v4SDKVersions.tapGlobalPayments.android}'
+}
+`}
+</CodeBlock>
+
+### **SDK Initialization**
+
+After adding the TapTapIAP dependency, you need to initialize the `TapTapIAP` instance. `TapTapIAP` communicates between the SDK and the rest of your application, providing methods for many common operations.
+
+First, initialize the SDK during app launch by setting `TapTapSdkOptions` and completing SDK initialization with `TapTapSdk.init`.
+
+You need to set the `ClientID` and `ClientToken` obtained from the developer backend for permission validation to use `TapTapIAP`.
+
+```java
+TapTapSdkOptions sdkOptions = new TapTapSdkOptions(
+    "Your App's ClientID",     // clientId obtained from the developer platform
+    "Your App's ClientToken",  // clientToken obtained from the developer platform
+    TapTapRegion.GLOBAL,       // Region
+    "",                        // Sub-package channel name
+    "",                        // Game version, null will take AppVersion
+    false,                     // Automatically report GooglePlay purchase success event, effective only for [TapTapRegion.GLOBAL]
+    false,                     // Custom fields can overwrite built-in fields
+    null,                      // Custom attributes, included with the first preset event (device_login)
+    null,                      // OAID certificate, used for reporting OAID, effective only for [TapTapRegion.CN]
+    false                      // Enable log, recommended to enable in Debug and disable in Release
+);
+
+TapTapSdk.init(context, sdkOptions);
+```
+
+To create `TapTapIAP`, use `newBuilder()`, which will validate the permissions to use `TapTapIAP` based on the `ClientID` and `ClientToken` set in SDK.init.
+
+```java
+// Create TapTapIAP instance
+TapTapIAP tapTapIAP = TapTapIAP.newBuilder().build();
+```
+
+### **Displaying Available Products for Purchase**
+
+After initializing `TapTapIAP`, you can query available products and display them to users.
+
+To query in-app product details, call `queryProductDetailsAsync()`. You must also specify a listener implementing the `ProductDetailsResponseListener` interface to handle the asynchronous operation results. You can override `onProductDetailsResponse()`, which will notify the listener when the query is complete, as shown in the example below:
+
+```java
+List<Product> queryProductList = new ArrayList<>();
+// Support batch query of Product, set the corresponding ProductID and ProductType
+// ProductType currently only supports ProductType.INAPP
+for (int i = 0; i < products.length; i++) {
+
+    String productId = products[i];
+    Product product = Product.newBuilder()
+        .setProductId(productId)
+        .setProductType(ProductType.INAPP)
+        .build();
+    queryProductList.add(product);
+}
+QueryProductDetailsParams params = QueryProductDetailsParams.newBuilder()
+    .setProductList(queryProductList).build();
+tapTapIAP.queryProductDetailsAsync(params, new ProductDetailsResponseListener() {
+    @Override
+    public void onProductDetailsResponse(TapPaymentResult result,
+        List<ProductDetails> productDetails, List<String> unavailableProductIds) {
+          ...
+
+            // check TapPaymentResult
+            // process returned productDetails
+        }
+});
+```
+
+### **Launching the Purchase Flow**
+
+To initiate a purchase request from your app, call the `launchBillingFlow()` method from your app's main thread. This method accepts a reference to a `BillingFlowParams` object, which contains the relevant `ProductDetails` object obtained by calling `queryProductDetailsAsync()`. To create a `BillingFlowParams` object, use the `BillingFlowParams.Builder` class.
+
+```java
+// An activity reference from which the billing flow will be launched.
+Activity activity = ...;
+ProductDetailsParams productDetailsParams =
+    ProductDetailsParams.newBuilder()
+        // retrieve a value for "productDetails" by calling queryProductDetailsAsync()
+        .setProductDetails(productDetails)
+        .build();
+
+BillingFlowParams billingFlowParams = BillingFlowParams.newBuilder()
+    .setProductDetailsParams(productDetailsParams)
+    .setObfuscatedAccountId("xxx") //Specifies an optional obfuscated string that is uniquely associated with the order(or another information) in your app.
+    .build();
+// Launch the billing flow
+TapPaymentResult result = tapTapIAP.launchBillingFlow(activity,
+    billingFlowParams,
+    new PurchaseUpdatedListener() {
+        @Override
+        public void onPurchaseUpdated(TapPaymentResult result, Purchase purchases) {
+            // To be implemented in a later section.
+        }
+    }
+);
+```
+
+The `launchBillingFlow()` method returns one of several response codes listed in `TapPaymentResponseCode`. Be sure to check this result to ensure no errors occurred when launching the purchase flow. A `TapPaymentResponseCode` of `OK` indicates a successful launch. After a successful call to `launchBillingFlow()`, a checkout interface will be presented to the user.
+
+### **Monitoring Order Status During the Purchase Flow**
+
+During the purchase flow, `TapTapIAP` calls `onPurchasesUpdated()` to deliver real-time purchase order status changes to the listener implementing the `PurchasesUpdatedListener` interface. You can specify the listener using the `setListener()` method during initialization. You must implement `onPurchasesUpdated()` to handle possible response codes. Below is an example of `onPurchasesUpdated()`:
+
+```java
+@Override
+public void onPurchaseUpdated(TapPaymentResult result, Purchase purchase) {
+    if (result.getResponseCode() == TapPaymentResponseCode.OK
+        && purchases != null) {
+        handlePurchase(purchase);
+    } else if (result.getResponseCode() == TapPaymentResponseCode.USER_CANCELED) {
+        // Handle an error caused by a user cancelling the purchase flow.
+    } else {
+        // Handle any other error codes.
+    }
+}
+```
+
+### **Granting Products and Completing Orders**
+
+After a user completes the purchase of any product, confirm that the corresponding product or level is granted to the user. After confirming product delivery, call `finishPurchaseAsync` to inform `TapTapIAP` that the product delivery is complete. Below is a code example:
+
+```java
+Purchase purchase = ...;
+FinishPurchaseParams params = FinishPurchaseParams.newBuilder()
+    .setId(purchase.getOrderId()) // Required
+    .setOrderToken(purchase.getOrderToken()) // Required
+    .setPurchaseToken(purchase.getPurchaseToken()) // Required
+    .build();
+tapTapIAP.finishPurchaseAsync(params, new FinishPurchaseResponseListener() {
+    @Override
+    public void onFinishPurchaseResponse(TapPaymentResult result, Purchase purchase) {
+    }
+});
+```
+:::tip
+Confirming product delivery is crucial. If you do not call `finishPurchaseAsync` to complete the order, the user will not be able to repurchase the product, and the order will be automatically refunded after 3 days.
+:::
+
+### **Retrieving Unfinished Orders**
+
+Using the `PurchasesUpdatedListener` to monitor purchase transaction changes does not fully ensure that your app handles all purchase transactions. Sometimes, your app may be unaware of partial purchase transactions. In the following scenarios, your app may not track or know that a purchase transaction has occurred:
+
+- **Network Issues During Purchase**: The user successfully purchased an item and received confirmation from the respective channel, but the user's device lost network connectivity before receiving purchase transaction notification via `PurchasesUpdatedListener`.
+- **Multiple Devices**: The user purchased an item on one device and then expected to see the item when switching devices.
+- **Unexpected Crash**: The app crashed when a purchase was successfully made externally.
+
+To handle these situations, ensure that your app calls `tapTapIAP.queryUnfinishedPurchaseAsync()` in the `onResume()` method to ensure all purchase transactions are correctly processed.
+
+Below is an example of how to extract the user's list of unfinished orders:
+
+```java
+tapTapIAP.queryUnfinishedPurchaseAsync(new PurchasesResponseListener() {
+    @Override
+    public void onQueryPurchasesResponse(TapPaymentResult result, List<Purchase> purchases) {
+        if (purchases != null) {
+            // Process Purchases.
+            ...
+            ...
+        }
+    }
+ });
+```
+
+### **Handling TapPaymentResult Response Codes**
+
+When using the `TapTapIAP` billing library to trigger actions, the library returns a `TapPaymentResult` response to inform the developer of the result. For example, if you use `queryProductDetailsAsync` and return `OK`, providing the correct `ProductDetails` object; or return another type, indicating why the `ProductDetails` object could not be provided.
+
+Not all types are errors. Here are some `TapPaymentResponseCode` that are not errors:
+
+- `TapPaymentResponseCode.OK`: Indicates the operation was successfully executed.
+- `TapPaymentResponseCode.USER_CANCELED`: Indicates the user left the page without completing the flow.
+
+Some other error types can be used for debugging and reporting:
+
+| **Retryable CODE**    | **Issue**                                                                                      | **Possible Solutions**                                                              |
+| --------------------- | --------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| NETWORK_ERROR         | This error indicates a problem with the network connection between the device and TapTapIAP   | Use a simple retry strategy or exponential backoff algorithm                        |
+| ITEM_ALREADY_OWNED    | This type indicates the user has already purchased a non-consumable item, resulting in this error when repurchasing | To avoid this issue, inform the user on the product interface that the item is already purchased and cannot be repurchased. |
+| USER_CANCELED         | The user has exited the billing flow                                                           |                                                                                     |
+| ITEM_UNAVAILABLE      | The item is invalid, possibly expired or removed from sale                                    | Ensure you refresh product details with `queryProductDetailsAsync`. Do not display unavailable items to users.              |
+| DEVELOPER_ERROR       | This is a serious error indicating improper API usage. For example, providing incorrect parameters to `launchBillingFlow` may cause this error |                                                                                     |
