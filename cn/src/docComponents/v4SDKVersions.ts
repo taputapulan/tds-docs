@@ -1,6 +1,6 @@
-const taptapUnity = "4.4.2"
-const taptapIos = "4.4.0"
-const taptapAndroid = "4.4.2"
+const taptapUnity = "4.4.3"
+const taptapIos = "4.4.3"
+const taptapAndroid = "4.4.3"
 const taptapUnreal = "3.29.2"
 
 const v4SDKVersions = {
@@ -27,8 +27,8 @@ const v4SDKVersions = {
         }
     },
     tapadn: {
-        unity: "3.16.3.37",
-        android: "3.16.3.37",
+        unity: "3.16.3.39",
+        android: "3.16.3.39",
     },
     tapGlobalPayments: {
         unity: "4.0.14",
